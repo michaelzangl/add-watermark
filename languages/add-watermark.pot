@@ -1,0 +1,172 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Add watermarks\n"
+"POT-Creation-Date: 2015-02-21 23:32+0100\n"
+"PO-Revision-Date: 2015-02-21 23:33+0100\n"
+"Last-Translator: \n"
+"Language-Team: Michael Zangl\n"
+"Language: English\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-KeywordsList: __;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: ..\n"
+
+#: ../add-watermark.php:127 ../add-watermark.php:128
+msgid "Insert watermark"
+msgstr "Wasserzeichen aktivieren"
+
+#: ../add-watermark.php:129 ../add-watermark.php:130
+msgid "Remove watermark"
+msgstr ""
+
+#: ../add-watermark.php:131 ../add-watermark.php:132
+msgid "Set watermark to default"
+msgstr ""
+
+#: ../add-watermark.php:142
+msgid "protect"
+msgstr ""
+
+#: ../add-watermark.php:143
+msgid "unprotect"
+msgstr ""
+
+#: ../add-watermark.php:144
+msgid "default"
+msgstr ""
+
+#: ../add-watermark.php:147
+msgid "Protected"
+msgstr ""
+
+#: ../add-watermark.php:150
+msgid "Unprotected"
+msgstr ""
+
+#: ../add-watermark.php:153
+msgid "Use default"
+msgstr ""
+
+#: ../add-watermark.php:191
+msgid "General settings"
+msgstr "Allgemeine Einstellungen"
+
+#: ../add-watermark.php:192
+msgid "Watermark images that do not have an explicit setting"
+msgstr ""
+
+#: ../add-watermark.php:193
+msgid "Watermark image"
+msgstr ""
+
+#: ../add-watermark.php:194
+msgid "Image"
+msgstr ""
+
+#: ../add-watermark.php:195
+msgid "Watermark position"
+msgstr ""
+
+#: ../add-watermark.php:196
+msgid "Fit the image"
+msgstr ""
+
+#: ../add-watermark.php:197
+msgid "Horizontal position"
+msgstr ""
+
+#: ../add-watermark.php:198
+msgid "Width"
+msgstr ""
+
+#: ../add-watermark.php:199
+msgid "Vertical Position"
+msgstr ""
+
+#: ../add-watermark.php:200
+msgid "Height"
+msgstr ""
+
+#: ../add-watermark.php:215
+msgid "Add watermark to all images"
+msgstr ""
+
+#: ../add-watermark.php:216
+msgid "Do not add watermark"
+msgstr ""
+
+#: ../add-watermark.php:230
+msgid "Shrink to keep aspect"
+msgstr ""
+
+#: ../add-watermark.php:231
+msgid "Stretch to area"
+msgstr ""
+
+#: ../add-watermark.php:244
+msgid "Choose image"
+msgstr ""
+
+#: ../add-watermark.php:253 ../add-watermark.php:272
+msgid "Align to"
+msgstr ""
+
+#: ../add-watermark.php:255
+msgid "Left"
+msgstr ""
+
+#: ../add-watermark.php:256 ../add-watermark.php:275
+msgid "Center"
+msgstr ""
+
+#: ../add-watermark.php:257
+msgid "Right"
+msgstr ""
+
+#: ../add-watermark.php:259 ../add-watermark.php:278
+msgid "then move"
+msgstr ""
+
+#: ../add-watermark.php:261
+msgid "to the right."
+msgstr ""
+
+#: ../add-watermark.php:274
+msgid "Top"
+msgstr ""
+
+#: ../add-watermark.php:276
+msgid "Bottom"
+msgstr ""
+
+#: ../add-watermark.php:280
+msgid "to the bottom."
+msgstr ""
+
+#: ../add-watermark.php:300
+msgid "Desired:"
+msgstr ""
+
+#: ../add-watermark.php:302 ../add-watermark.php:304
+msgid "Min:"
+msgstr ""
+
+#: ../add-watermark.php:314
+msgid "Pixel"
+msgstr ""
+
+#: ../add-watermark.php:315 ../add-watermark.php:330
+msgid "%"
+msgstr ""
+
+#: ../add-watermark.php:324
+msgid "Add watermark"
+msgstr ""
+
+#: ../add-watermark.php:337
+msgid "Submit and empty Cache"
+msgstr ""

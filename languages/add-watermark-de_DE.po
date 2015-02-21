@@ -1,0 +1,256 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Add watermark v1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-02-21 23:24+0100\n"
+"PO-Revision-Date: 2015-02-21 22:51:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: Michael Zangl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Poedit 1.5.4\n"
+"X-Poedit-Language: \n"
+"X-Poedit-Country: \n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;__ngettext:1,2;_n:1,2;__ngettext_noop:1,2;_n_noop:1,2;_c,_nc:4c,1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;_nx_noop:4c,1,2;\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-Bookmarks: \n"
+"X-Poedit-SearchPath-0: ..\n"
+"X-Textdomain-Support: yes"
+
+#: add-watermark.php:127
+#: add-watermark.php:128
+#@ add-watermark
+msgid "Insert watermark"
+msgstr "Wasserzeichen einfügen"
+
+#: add-watermark.php:129
+#: add-watermark.php:130
+#@ add-watermark
+msgid "Remove watermark"
+msgstr "Kein Wasserzeichen"
+
+#: add-watermark.php:131
+#: add-watermark.php:132
+#@ add-watermark
+msgid "Set watermark to default"
+msgstr "Wasserzeichen: Standard verwenden"
+
+#: add-watermark.php:142
+#@ add-watermark
+msgid "protect"
+msgstr "schützen"
+
+#: add-watermark.php:143
+#@ add-watermark
+msgid "unprotect"
+msgstr "kein Wasserzeichen"
+
+#: add-watermark.php:144
+#@ add-watermark
+msgid "default"
+msgstr "Standard"
+
+#: add-watermark.php:147
+#@ add-watermark
+msgid "Protected"
+msgstr "Mit Wasserzeichen"
+
+#: add-watermark.php:150
+#@ add-watermark
+msgid "Unprotected"
+msgstr "Kein Wasserzeichen"
+
+#: add-watermark.php:153
+#@ add-watermark
+msgid "Use default"
+msgstr "Standard"
+
+#: add-watermark.php:191
+#@ add-watermark
+msgid "General settings"
+msgstr "Allgemeine Einstellungen"
+
+#: add-watermark.php:192
+#@ add-watermark
+msgid "Watermark images that do not have an explicit setting"
+msgstr "Wasserzeichen (sofern nicht explizit gesetzt)"
+
+#: add-watermark.php:193
+#@ add-watermark
+msgid "Watermark image"
+msgstr "Bild das als Wasserzeichen verwendet wird"
+
+#: add-watermark.php:194
+#@ add-watermark
+msgid "Image"
+msgstr "Bild"
+
+#: add-watermark.php:195
+#@ add-watermark
+msgid "Watermark position"
+msgstr "Position"
+
+#: add-watermark.php:196
+#@ add-watermark
+msgid "Fit the image"
+msgstr "Das Wasserzeichen anpassen"
+
+#: add-watermark.php:197
+#@ add-watermark
+msgid "Horizontal position"
+msgstr "Horizontale Position"
+
+#: add-watermark.php:198
+#@ add-watermark
+msgid "Width"
+msgstr "Breite"
+
+#: add-watermark.php:199
+#@ add-watermark
+msgid "Vertical Position"
+msgstr "Vertikale Position"
+
+#: add-watermark.php:200
+#@ add-watermark
+msgid "Height"
+msgstr "Höhe"
+
+#: add-watermark.php:215
+#@ add-watermark
+msgid "Add watermark to all images"
+msgstr "Wasserzeichen zu allen Bildern hinzufügen"
+
+#: add-watermark.php:216
+#@ add-watermark
+msgid "Do not add watermark"
+msgstr "Kein Wasserzeichen hinzufügen"
+
+#: add-watermark.php:230
+#@ add-watermark
+msgid "Shrink to keep aspect"
+msgstr "Verkleinern um das Seitenverhältnis zu erhalten"
+
+#: add-watermark.php:231
+#@ add-watermark
+msgid "Stretch to area"
+msgstr "Auf den Bereich vergößern"
+
+#: add-watermark.php:244
+#@ add-watermark
+msgid "Choose image"
+msgstr "Bild wählen"
+
+#: add-watermark.php:253
+#: add-watermark.php:272
+#@ add-watermark
+msgid "Align to"
+msgstr "Das Wasserzeichen ist"
+
+#: add-watermark.php:255
+#@ add-watermark
+msgid "Left"
+msgstr "Links"
+
+#: add-watermark.php:256
+#: add-watermark.php:275
+#@ add-watermark
+msgid "Center"
+msgstr "Mitte"
+
+#: add-watermark.php:257
+#@ add-watermark
+msgid "Right"
+msgstr "Rechts"
+
+#: add-watermark.php:259
+#: add-watermark.php:278
+#@ add-watermark
+msgid "then move"
+msgstr "dann"
+
+#: add-watermark.php:261
+#@ add-watermark
+msgid "to the right."
+msgstr "nach rechts"
+
+#: add-watermark.php:274
+#@ add-watermark
+msgid "Top"
+msgstr "Oben"
+
+#: add-watermark.php:276
+#@ add-watermark
+msgid "Bottom"
+msgstr "Unten"
+
+#: add-watermark.php:280
+#@ add-watermark
+msgid "to the bottom."
+msgstr "nach unten"
+
+#: add-watermark.php:300
+#@ add-watermark
+msgid "Desired:"
+msgstr "Gewünscht:"
+
+#: add-watermark.php:302
+#: add-watermark.php:304
+#@ add-watermark
+msgid "Min:"
+msgstr "Mindestens:"
+
+#: add-watermark.php:314
+#@ add-watermark
+msgid "Pixel"
+msgstr "Maximal:"
+
+#: add-watermark.php:315
+#@ add-watermark
+msgid "%"
+msgstr "%"
+
+#. translators: plugin header field 'Name'
+#: add-watermark.php:0
+#: add-watermark.php:324
+#@ add-watermark
+msgid "Add watermark"
+msgstr "Wasserzeichen hinzufügen"
+
+#: add-watermark.php:337
+#@ add-watermark
+msgid "Submit and empty Cache"
+msgstr "Speichern und Cache löschen"
+
+#. translators: plugin header field 'PluginURI'
+#. translators: plugin header field 'AuthorURI'
+#: add-watermark.php:0
+#@ add-watermark
+msgid "http://wordpress.org/extend/plugins/"
+msgstr ""
+
+#. translators: plugin header field 'Description'
+#: add-watermark.php:0
+#@ add-watermark
+msgid "Adds watermarks to selected images without changing the original image."
+msgstr "Fügt Wasserzeichen zu wählbaren Bildern hinzu, ohne das Orginalbild zu verändern."
+
+#. translators: plugin header field 'Author'
+#: add-watermark.php:0
+#@ add-watermark
+msgid "Michael Zangl"
+msgstr ""
+
+#. translators: plugin header field 'Version'
+#: add-watermark.php:0
+#@ add-watermark
+msgid "1.0"
+msgstr "1.0"
+
+#: add-watermark.php:330
+#@ add-watermark
+msgid "Add watermark settings"
+msgstr "Einstellungen für das Wasserzeichen"
+

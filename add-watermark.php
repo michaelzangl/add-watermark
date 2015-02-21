@@ -59,7 +59,12 @@ class AddWatermarksSettings {
 		add_filter('manage_media_columns', array($settings, 'addWatermarkColumn'));
 		add_filter('manage_media_custom_column', array($settings, 'outputWatermarkColumn'));
 		add_filter('admin_footer-upload.php', array($settings, 'outputAdminFooter'));
-		add_action( 'load-upload.php', array($settings, 'doBulkAction'));
+		add_action('load-upload.php', array($settings, 'doBulkAction'));
+		add_action('plugins_loaded', array($settings, 'loadTextdomain'));
+	}
+
+	function loadTextdomain() {
+		load_plugin_textdomain('add-watermark', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); 
 	}
 
 	function addWatermarkColumn($columns) {
@@ -119,12 +124,12 @@ class AddWatermarksSettings {
 ?>
 <script type="text/javascript">
 jQuery(function() {
-	jQuery('<option value="add_watermark_yes">').text("<?php echo html_entity_decode('Wasserzeichen einfügen') ?>").appendTo("select[name=\'action\']");
-	jQuery('<option value="add_watermark_yes">').text("<?php echo html_entity_decode('Wasserzeichen einfügen') ?>").appendTo("select[name=\'action2\']");
-	jQuery('<option value="add_watermark_no">').text("<?php echo html_entity_decode('Wasserzeichen entfernen') ?>").appendTo("select[name=\'action\']");
-	jQuery('<option value="add_watermark_no">').text("<?php echo html_entity_decode('Wasserzeichen entfernen') ?>").appendTo("select[name=\'action2\']");
-	jQuery('<option value="add_watermark_unset">').text("<?php echo html_entity_decode('Wasserzeichen auf Standard setzen') ?>").appendTo("select[name=\'action\']");
-	jQuery('<option value="add_watermark_unset">').text("<?php echo html_entity_decode('Wasserzeichen auf Standard setzen') ?>").appendTo("select[name=\'action2\']");
+	jQuery('<option value="add_watermark_yes">').text("<?php echo html_entity_decode(__('Insert watermark', 'add-watermark')) ?>").appendTo("select[name=\'action\']");
+	jQuery('<option value="add_watermark_yes">').text("<?php echo html_entity_decode(__('Insert watermark', 'add-watermark')) ?>").appendTo("select[name=\'action2\']");
+	jQuery('<option value="add_watermark_no">').text("<?php echo html_entity_decode(__('Remove watermark', 'add-watermark')) ?>").appendTo("select[name=\'action\']");
+	jQuery('<option value="add_watermark_no">').text("<?php echo html_entity_decode(__('Remove watermark', 'add-watermark')) ?>").appendTo("select[name=\'action2\']");
+	jQuery('<option value="add_watermark_unset">').text("<?php echo html_entity_decode(__('Set watermark to default', 'add-watermark')) ?>").appendTo("select[name=\'action\']");
+	jQuery('<option value="add_watermark_unset">').text("<?php echo html_entity_decode(__('Set watermark to default', 'add-watermark')) ?>").appendTo("select[name=\'action2\']");
 });
 </script>
 <?php
@@ -134,18 +139,18 @@ jQuery(function() {
 		if ($column == 'add-watermark') {
 			$meta = get_metadata('post', get_the_ID(), 'add-watermark', true);
 			$actions = array(
-				'yes' => "Schützen",
-				'no' => "Nicht Schützen",
-				'unset' => "Standard"
+				'yes' => __('protect', 'add-watermark'),
+				'no' => __('unprotect', 'add-watermark'),
+				'unset' => __('default', 'add-watermark')
 			);
 			if ($meta == 'yes') {
-				$current = "Schützen";
+				$current = __('Protected', 'add-watermark');
 				unset($actions['yes']);
 			} else if ($meta == 'no') {
-				$current = "Nicht schützen";
+				$current = __('Unprotected', 'add-watermark');
 				unset($actions['no']);
 			} else {
-				$current = "Standardeinstellung";
+				$current = __('Use default', 'add-watermark');
 				unset($actions['unset']);
 			}
 			echo '<div>' . esc_html($current) . '</div>';
@@ -183,16 +188,16 @@ jQuery(function() {
 		$this->registerMinMaxSize('add-watermark-width');
 		$this->registerMinMaxSize('add-watermark-height');
 
-		add_settings_section( 'add-watermark-default-active', 'General settings', null, 'add-watermark-settings');
-		add_settings_field( 'add-watermark-default-active', 'Aktivierungsmodus falls nicht angegeben', array($this, 'outputDefaultSelect'), 'add-watermark-settings', 'add-watermark-default-active');
-		add_settings_section( 'add-watermark-image', 'Watermark image', null, 'add-watermark-settings');
-		add_settings_field( 'add-watermark-image', 'Bild', array($this, 'outputImageSelect'), 'add-watermark-settings', 'add-watermark-image');
-		add_settings_section( 'add-watermark-position', 'Watermark position', array($this, 'addPositionDescription'), 'add-watermark-settings');
-		add_settings_field( 'add-watermark-size', 'Zuschneiden', array($this, 'addSizeSelect'), 'add-watermark-settings', 'add-watermark-position');
-		add_settings_field( 'add-watermark-horizontal-pos', 'Horizontale Position', array($this, 'outputHorizontalPos'), 'add-watermark-settings', 'add-watermark-position');
-		add_settings_field( 'add-watermark-width', 'Breite', array($this, 'outputWidth'), 'add-watermark-settings', 'add-watermark-position');
-		add_settings_field( 'add-watermark-vertical-pos', 'Vertikale Position', array($this, 'outputVerticalPos'), 'add-watermark-settings', 'add-watermark-position');
-		add_settings_field( 'add-watermark-height', 'Höhe', array($this, 'outputHeight'), 'add-watermark-settings', 'add-watermark-position');
+		add_settings_section( 'add-watermark-default-active', __('General settings', 'add-watermark'), null, 'add-watermark-settings');
+		add_settings_field( 'add-watermark-default-active', __('Watermark images that do not have an explicit setting', 'add-watermark'), array($this, 'outputDefaultSelect'), 'add-watermark-settings', 'add-watermark-default-active');
+		add_settings_section( 'add-watermark-image', __('Watermark image', 'add-watermark'), null, 'add-watermark-settings');
+		add_settings_field( 'add-watermark-image', __('Image', 'add-watermark'), array($this, 'outputImageSelect'), 'add-watermark-settings', 'add-watermark-image');
+		add_settings_section( 'add-watermark-position', __('Watermark position', 'add-watermark'), array($this, 'addPositionDescription'), 'add-watermark-settings');
+		add_settings_field( 'add-watermark-size', __('Fit the image', 'add-watermark'), array($this, 'addSizeSelect'), 'add-watermark-settings', 'add-watermark-position');
+		add_settings_field( 'add-watermark-horizontal-pos', __('Horizontal position', 'add-watermark'), array($this, 'outputHorizontalPos'), 'add-watermark-settings', 'add-watermark-position');
+		add_settings_field( 'add-watermark-width', __('Width', 'add-watermark'), array($this, 'outputWidth'), 'add-watermark-settings', 'add-watermark-position');
+		add_settings_field( 'add-watermark-vertical-pos', __('Vertical Position', 'add-watermark'), array($this, 'outputVerticalPos'), 'add-watermark-settings', 'add-watermark-position');
+		add_settings_field( 'add-watermark-height', __('Height', 'add-watermark'), array($this, 'outputHeight'), 'add-watermark-settings', 'add-watermark-position');
 	}
 
 
@@ -207,8 +212,8 @@ jQuery(function() {
 		$setting = add_watermark_option("default-active") * 1;
 ?>
 <select name="add-watermark-default-active">
-<option value="1"<?php if ($setting) echo ' selected="selected"'; ?>>Wasserzeichen anzeigen</option>
-<option value="0"<?php if (!$setting) echo ' selected="selected"'; ?>>Kein Wasserzeichen anzeigen</option>
+<option value="1"<?php if ($setting) echo ' selected="selected"'; ?>><?php echo __('Add watermark to all images', 'add-watermark') ?></option>
+<option value="0"<?php if (!$setting) echo ' selected="selected"'; ?>><?php echo __('Do not add watermark', 'add-watermark') ?></option>
 </select>
 
 <?php
@@ -222,8 +227,8 @@ jQuery(function() {
 <option value="cover-left"<?php if ($setting == 'cover-left') echo ' selected="selected"'; ?>>Cover the area, clamp (left)</option>
 <option value="cover-top"<?php if ($setting == 'cover-top') echo ' selected="selected"'; ?>>Cover the area, clamp (top)</option>
 <option value="cover-right"<?php if ($setting == 'cover-right') echo ' selected="selected"'; ?>>Cover the area, clamp (right)</option>-->
-<option value="contain"<?php if ($setting == 'contain') echo ' selected="selected"'; ?>>Shrink more, keep aspect</option>
-<option value="full"<?php if ($setting == 'auto') echo ' selected="selected"'; ?>>stretch</option>
+<option value="contain"<?php if ($setting == 'contain') echo ' selected="selected"'; ?>><?php echo __('Shrink to keep aspect', 'add-watermark') ?></option>
+<option value="full"<?php if ($setting == 'auto') echo ' selected="selected"'; ?>><?php echo __('Stretch to area', 'add-watermark') ?></option>
 </select>
 <?php
 }
@@ -236,7 +241,7 @@ jQuery(function() {
 <input class="add-watermark-image-url" type="hidden" name="add-watermark-image-url" value="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>"/>
 <img class="add-watermark-image-preview" style="width: auto; height: auto; max-width: 300px; max-height: 200px;" src="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>"/>
 <div class="add-watermark-image-path"></div>
-<div><a class="add-watermark-image-select" href="#">Bild wählen</a></div>
+<div><a class="add-watermark-image-select" href="#"><?php echo __('Choose image', 'add-watermark') ?></a></div>
 </div>
 
 <?php
@@ -245,15 +250,15 @@ jQuery(function() {
 	function outputHorizontalPos() {
 		$setting = add_watermark_option("horizontal-pos-from");
 ?>
-Align to
+<?php echo __('Align to', 'add-watermark') ?>
 <select name="add-watermark-horizontal-pos-from">
-<option value="left"<?php if ($setting == 'left') echo ' selected="selected"'; ?>>Left</option>
-<option value="center"<?php if ($setting == 'center') echo ' selected="selected"'; ?>>Center</option>
-<option value="right"<?php if ($setting == 'right') echo ' selected="selected"'; ?>>Right</option>
+<option value="left"<?php if ($setting == 'left') echo ' selected="selected"'; ?>><?php echo __('Left', 'add-watermark') ?></option>
+<option value="center"<?php if ($setting == 'center') echo ' selected="selected"'; ?>><?php echo __('Center', 'add-watermark') ?></option>
+<option value="right"<?php if ($setting == 'right') echo ' selected="selected"'; ?>><?php echo __('Right', 'add-watermark') ?></option>
 </select>
-then move
+<?php echo __('then move', 'add-watermark') ?>
 <?php $this->outputUnitSelect('horizontal-pos'); ?>
-to the right.
+<?php echo __('to the right.', 'add-watermark') ?>
 <?php
 	}
 
@@ -264,15 +269,15 @@ to the right.
 	function outputVerticalPos() {
 		$setting = add_watermark_option("vertical-pos-from");
 ?>
-Align to
+<?php echo __('Align to', 'add-watermark') ?>
 <select name="add-watermark-vertical-pos-from">
-<option value="top"<?php if ($setting == 'top') echo ' selected="selected"'; ?>>Top</option>
-<option value="center"<?php if ($setting == 'center') echo ' selected="selected"'; ?>>Center</option>
-<option value="bottom"<?php if ($setting == 'bottom') echo ' selected="selected"'; ?>>Bottom</option>
+<option value="top"<?php if ($setting == 'top') echo ' selected="selected"'; ?>><?php echo __('Top', 'add-watermark') ?></option>
+<option value="center"<?php if ($setting == 'center') echo ' selected="selected"'; ?>><?php echo __('Center', 'add-watermark') ?></option>
+<option value="bottom"<?php if ($setting == 'bottom') echo ' selected="selected"'; ?>><?php echo __('Bottom', 'add-watermark') ?></option>
 </select>
-then move
+<?php echo __('then move', 'add-watermark') ?>
 <?php $this->outputUnitSelect('vertical-pos'); ?>
-to the bottom.
+<?php echo __('to the bottom.', 'add-watermark') ?>
 <?php
 	}
 
@@ -292,11 +297,11 @@ to the bottom.
 	}
 
 	function outputMinMaxSize($name) {
-		echo '<span style="width: 5em; display: inline-block;"></span>';
+		echo '<span style="width: 5em; display: inline-block;">' . __('Desired:', 'add-watermark') . '</span>';
 		$this->outputUnitSelect("$name");
-		echo '<br/><span style="width: 5em; display: inline-block;">Min:</span>';
+		echo '<br/><span style="width: 5em; display: inline-block;">' . __('Min:', 'add-watermark') . '</span>';
 		$this->outputUnitSelect("$name-min");
-		echo '<br/><span style="width: 5em; display: inline-block;">Max:</span>';
+		echo '<br/><span style="width: 5em; display: inline-block;">' . __('Min:', 'add-watermark') . '</span>';
 		$this->outputUnitSelect("$name-max");
 	}
 
@@ -306,8 +311,8 @@ to the bottom.
 ?>
 <input type="text" name="add-watermark-<?php echo $name ?>" value="<?php echo esc_attr($setting) ?>"/>
 <select name="add-watermark-<?php echo $name ?>-unit">
-<option value="px"<?php if ($unit != '%') echo ' selected="selected"'; ?>>Pixel</option>
-<option value="%"<?php if ($unit == '%') echo ' selected="selected"'; ?>>%</option>
+<option value="px"<?php if ($unit != '%') echo ' selected="selected"'; ?>><?php echo __('Pixel', 'add-watermark') ?></option>
+<option value="%"<?php if ($unit == '%') echo ' selected="selected"'; ?>><?php echo __('%', 'add-watermark') ?></option>
 </select>
 
 <?php
@@ -316,20 +321,20 @@ to the bottom.
 
 class AddWatermarkOptionsPage {
 	function registerMenu() {
-		$page = add_options_page( 'Add watermark', 'Add watermark', 'manage_options', 'add-watermark-menu', array($this, 'generateOptions') );
+		$page = add_options_page( __('Add watermark', 'add-watermark'), __('Add watermark', 'add-watermark'), 'manage_options', 'add-watermark-menu', array($this, 'generateOptions') );
 	}
 
 	function generateOptions() {
 ?>
 <div class="wrap add-watermark-settings">
-<h2>Add watermark settings</h2>
+<h2><?php echo __('Add watermark settings', 'add-watermark') ?></h2>
 <form method="post" action="options.php"> 
 
 <?php settings_fields( 'add-watermark-settings' ); 
 do_settings_sections( 'add-watermark-settings' );
 ?>
 
-<?php submit_button('Submit and empty Cache'); ?>
+<?php submit_button(__('Submit and empty Cache', 'add-watermark')); ?>
 </form>
 </div>
 <?php
