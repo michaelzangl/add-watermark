@@ -301,7 +301,7 @@ jQuery(function() {
 		$this->outputUnitSelect("$name");
 		echo '<br/><span style="width: 5em; display: inline-block;">' . __('Min:', 'add-watermark') . '</span>';
 		$this->outputUnitSelect("$name-min");
-		echo '<br/><span style="width: 5em; display: inline-block;">' . __('Min:', 'add-watermark') . '</span>';
+		echo '<br/><span style="width: 5em; display: inline-block;">' . __('Max:', 'add-watermark') . '</span>';
 		$this->outputUnitSelect("$name-max");
 	}
 

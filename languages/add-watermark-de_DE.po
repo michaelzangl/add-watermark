@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Add watermark v1.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2015-02-21 23:24+0100\n"
-"PO-Revision-Date: 2015-02-21 22:51:17+0000\n"
+"PO-Revision-Date: 2015-02-21 23:15:12+0000\n"
 "Last-Translator: \n"
 "Language-Team: Michael Zangl\n"
 "MIME-Version: 1.0\n"
@@ -197,7 +197,6 @@ msgid "Desired:"
 msgstr "Gewünscht:"
 
 #: add-watermark.php:302
-#: add-watermark.php:304
 #@ add-watermark
 msgid "Min:"
 msgstr "Mindestens:"
@@ -205,7 +204,7 @@ msgstr "Mindestens:"
 #: add-watermark.php:314
 #@ add-watermark
 msgid "Pixel"
-msgstr "Maximal:"
+msgstr "Pixel"
 
 #: add-watermark.php:315
 #@ add-watermark
@@ -253,4 +252,9 @@ msgstr "1.0"
 #@ add-watermark
 msgid "Add watermark settings"
 msgstr "Einstellungen für das Wasserzeichen"
+
+#: add-watermark.php:304
+#@ add-watermark
+msgid "Max:"
+msgstr "Maximal"
 

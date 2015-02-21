@@ -20,9 +20,11 @@ jQuery('.add-watermark-image-select').click(function( event ){
 
 			// update width and height fields
 			jQuery('.add-watermark-settings input[name=add-watermark-width]').val(selected.attributes.width + '')
-			jQuery('.add-watermark-settings input[name=add-watermark-width-unit]').val('px')
+			jQuery('.add-watermark-settings select[name=add-watermark-width-unit]').val('px')
 			jQuery('.add-watermark-settings input[name=add-watermark-height]').val(selected.attributes.height + '')
-			jQuery('.add-watermark-settings input[name=add-watermark-height-unit]').val('px')
+			jQuery('.add-watermark-settings select[name=add-watermark-height-unit]').val('px')
+
+			reloadPreview();
 		});
 	}
 	selectFrame.open();
