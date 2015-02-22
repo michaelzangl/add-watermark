@@ -612,4 +612,5 @@ if ( is_admin() ){
 	AddWatermarksSettings::register();
 }
 add_action( 'wp_ajax_watermark_image', array('AddWatermarkRequest', 'runAjax') );
+add_action( 'wp_ajax_nopriv_watermark_image', array('AddWatermarkRequest', 'runAjax') );
 
