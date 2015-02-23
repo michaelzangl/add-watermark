@@ -10,8 +10,8 @@
 	Domain Path: /lang
  */
 
-function add_watermark_option($name) {
-	$defaults = array(
+function add_watermark_defaults() {
+	static $defaults = array(
 		'default-active' => '0',
 		'horizontal-pos' => '5',
 		'horizontal-pos-unit' => 'px',
@@ -34,6 +34,12 @@ function add_watermark_option($name) {
 		'height-min' => '10',
 		'height-min-unit' => '%',
 	);
+	
+	return $defaults;
+}
+
+function add_watermark_option($name) {
+	$defaults = add_watermark_defaults();
 
 	if (!isset($defaults[$name])) {
 		die("Unknown option: $name");
@@ -61,10 +67,40 @@ class AddWatermarksSettings {
 		add_filter('admin_footer-upload.php', array($settings, 'outputAdminFooter'));
 		add_action('load-upload.php', array($settings, 'doBulkAction'));
 		add_action('plugins_loaded', array($settings, 'loadTextdomain'));
+		// Does not seem to work :-(
+		//add_action('update_attached_file ', array($settings, 'removeAttachmentFromCache'));
+		add_action('delete_attachment', array('AddWatermarksSettings', 'removeAttachmentFromCache'));
 	}
 
 	function loadTextdomain() {
 		load_plugin_textdomain('add-watermark', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' ); 
+	}
+	
+	static function pluginActivate() {
+		$settings = new AddWatermarksSettings();
+		$settings->writeHtaccessFile();
+	}
+
+	static function pluginDeactivate() {
+		$settings = new AddWatermarksSettings();
+		$settings->removeHtaccessFile();
+		AddWatermarkRequest::emptyCache();
+	}
+
+	static function pluginUninstall() {
+		foreach (add_watermark_defaults() as $name => $value) {
+			delete_option('add-watermark-' . $name);
+		}
+	}
+	
+	static function removeAttachmentFromCache($attachmentId) {
+		$meta = wp_get_attachment_metadata($attachmentId);
+		if ($meta) { // < No meta for non-images.
+			AddWatermarkRequest::removeFileFromCache($meta['file']);
+			foreach ($meta['sizes'] as $name => $size) {
+				AddWatermarkRequest::removeFileFromCache(dirname($meta['file']) . "/" . $size['file']);
+			}
+		}
 	}
 
 	function addWatermarkColumn($columns) {
@@ -74,14 +110,17 @@ class AddWatermarksSettings {
 
 	function watermarkYes($post_id) {
 		update_metadata('post', $post_id, 'add-watermark', 'yes');
+		self::removeAttachmentFromCache($post_id);
 	}
 
 	function watermarkNo($post_id) {
 		update_metadata('post', $post_id, 'add-watermark', 'no');
+		self::removeAttachmentFromCache($post_id);
 	}
 
 	function watermarkUnset($post_id) {
 		delete_metadata('post', $post_id, 'add-watermark');
+		self::removeAttachmentFromCache($post_id);
 	}
 
 	function doBulkAction() {
@@ -165,13 +204,70 @@ jQuery(function() {
 	}
 
 	function htaccess() {
-		add_rewrite_rule('wp-content/uploads/(.*?\\.(png|jpe?g))', 'wp-admin/admin-ajax.php?action=watermark_image&path=$1');
+//		add_rewrite_rule('wp-content/uploads/(.*?\\.(png|jpe?g))', 'wp-admin/admin-ajax.php?action=watermark_image&path=$1');
+	}
+
+	function getUploadPath($fileName) {
+		// Gets the uploads direcotry
+		$upload_dir = wp_upload_dir();
+		return $upload_dir['basedir'] . "/" . $fileName;
+	}
+	
+	/**
+	 * Write the htaccess file in the uploads directory.
+	 */
+	function writeHtaccessFile() {
+		$file = $this->getUploadPath('.htaccess');
+		$content = file_get_contents($file);
+		$content = preg_replace('=^\\n?### WATERMARK START([\w\W]*)### WATERMARK END=m', '', $content);
+
+		$upload_dir = wp_upload_dir();
+		$upload_root = parse_url($upload_dir['baseurl']);
+		if ( isset( $upload_root['path'] ) )
+			$upload_root = trailingslashit($upload_root['path']);
+		else
+			$upload_root = '/';
+
+		$cache_root = parse_url( plugins_url('cache', __FILE__) );
+		if ( !isset( $cache_root['path'] ) )
+			//TODO: Display error.
+			return;
+		$cache_root = trailingslashit($cache_root['path']);
+
+		//$cacheDir = AddWatermarkRequest::getCacheDir();
+		$cacheDir = '%{DOCUMENT_ROOT}' . $cache_root;
+		$content .= "\n### WATERMARK START";
+		
+		// Use cached files if they are there
+		$content .= "\n" . 'RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f';
+		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
+		$content .= "\n" . 'RewriteCond ' . $cacheDir . '/%1 -f';
+		$content .= "\n" . 'RewriteRule (.*) ' . $cacheDir . '/%1 [L,END]';
+		
+		// If there is no don't watermark flag and it is an image, handle it.
+		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
+		$content .= "\n" . 'RewriteCond ' . $cacheDir . '/%1.nowm !-f';
+
+		// Note: The uploads direcotry should not be moved outside wp-content, the admin directory not moved.
+		$content .= "\n" . 'RewriteRule (.*) ../../wp-admin/admin-ajax.php?action=watermark_image&path=$1 [L]';
+		$content .= "\n### WATERMARK END";
+		file_put_contents($file, $content);
+	}
+	
+	function removeHtaccessFile() {
+		$file = $this->getUploadPath('.htaccess');
+		@unlink($file);
+	}
+	
+	function storeSettings() {
+			flush_rewrite_rules();
+			$this->writeHtaccessFile();
+			AddWatermarkRequest::emptyCache();
 	}
 
 	function onSettingsLoad() {
 		if(isset($_GET['settings-updated']) && $_GET['settings-updated']) {
-			flush_rewrite_rules();
-			AddWatermarkRequest::emptyCache();
+			$this->storeSettings();
 		}
 		wp_enqueue_media();
 		wp_enqueue_script( 'add-watermark-js', plugin_dir_url( __FILE__ ) . 'js/settings.js');
@@ -203,8 +299,14 @@ jQuery(function() {
 
 	function addPositionDescription() {
 ?>
-<div class="add-watermark-preview" style="background: white;width: 400px; height: 300px; position: relative; overflow: hidden; resize: both">
-<div class="watermark-pos"><div class="watermark-pos2"><div class="watermark" style="background #ccc"></div></div></div></div>
+<div class="add-watermark-preview"
+	style="background: white; width: 400px; height: 300px; position: relative; overflow: hidden; resize: both">
+	<div class="watermark-pos">
+		<div class="watermark-pos2">
+			<div class="watermark" style=""></div>
+		</div>
+	</div>
+</div>
 <?php
 	}
 
@@ -212,8 +314,8 @@ jQuery(function() {
 		$setting = add_watermark_option("default-active") * 1;
 ?>
 <select name="add-watermark-default-active">
-<option value="1"<?php if ($setting) echo ' selected="selected"'; ?>><?php echo __('Add watermark to all images', 'add-watermark') ?></option>
-<option value="0"<?php if (!$setting) echo ' selected="selected"'; ?>><?php echo __('Do not add watermark', 'add-watermark') ?></option>
+	<option value="1" <?php if ($setting) echo ' selected="selected"'; ?>><?php echo __('Add watermark to all images', 'add-watermark') ?></option>
+	<option value="0" <?php if (!$setting) echo ' selected="selected"'; ?>><?php echo __('Do not add watermark', 'add-watermark') ?></option>
 </select>
 
 <?php
@@ -223,12 +325,14 @@ jQuery(function() {
 		$setting = add_watermark_option("size", 'contain');
 ?>
 <select name="add-watermark-size">
-<!--<option value="cover-bottom"<?php if ($setting == 'cover-bottom') echo ' selected="selected"'; ?>>Cover the area, clamp (bottom)</option>
+	<!--<option value="cover-bottom"<?php if ($setting == 'cover-bottom') echo ' selected="selected"'; ?>>Cover the area, clamp (bottom)</option>
 <option value="cover-left"<?php if ($setting == 'cover-left') echo ' selected="selected"'; ?>>Cover the area, clamp (left)</option>
 <option value="cover-top"<?php if ($setting == 'cover-top') echo ' selected="selected"'; ?>>Cover the area, clamp (top)</option>
 <option value="cover-right"<?php if ($setting == 'cover-right') echo ' selected="selected"'; ?>>Cover the area, clamp (right)</option>-->
-<option value="contain"<?php if ($setting == 'contain') echo ' selected="selected"'; ?>><?php echo __('Shrink to keep aspect', 'add-watermark') ?></option>
-<option value="full"<?php if ($setting == 'auto') echo ' selected="selected"'; ?>><?php echo __('Stretch to area', 'add-watermark') ?></option>
+	<option value="contain"
+		<?php if ($setting == 'contain') echo ' selected="selected"'; ?>><?php echo __('Shrink to keep aspect', 'add-watermark') ?></option>
+	<option value="full"
+		<?php if ($setting == 'auto') echo ' selected="selected"'; ?>><?php echo __('Stretch to area', 'add-watermark') ?></option>
 </select>
 <?php
 }
@@ -237,11 +341,18 @@ jQuery(function() {
 		$setting = add_watermark_option("image", "") * 1;
 ?>
 <div class="add-watermark-image">
-<input class="add-watermark-image-id" type="hidden" name="add-watermark-image" value="<?php echo esc_attr($setting) ?>"/>
-<input class="add-watermark-image-url" type="hidden" name="add-watermark-image-url" value="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>"/>
-<img class="add-watermark-image-preview" style="width: auto; height: auto; max-width: 300px; max-height: 200px;" src="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>"/>
-<div class="add-watermark-image-path"></div>
-<div><a class="add-watermark-image-select" href="#"><?php echo __('Choose image', 'add-watermark') ?></a></div>
+	<input class="add-watermark-image-id" type="hidden"
+		name="add-watermark-image" value="<?php echo esc_attr($setting) ?>" />
+	<input class="add-watermark-image-url" type="hidden"
+		name="add-watermark-image-url"
+		value="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>" /> <img
+		class="add-watermark-image-preview"
+		style="width: auto; height: auto; max-width: 300px; max-height: 200px;"
+		src="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>" />
+	<div class="add-watermark-image-path"></div>
+	<div>
+		<a class="add-watermark-image-select" href="#"><?php echo __('Choose image', 'add-watermark') ?></a>
+	</div>
 </div>
 
 <?php
@@ -252,9 +363,12 @@ jQuery(function() {
 ?>
 <?php echo __('Align to', 'add-watermark') ?>
 <select name="add-watermark-horizontal-pos-from">
-<option value="left"<?php if ($setting == 'left') echo ' selected="selected"'; ?>><?php echo __('Left', 'add-watermark') ?></option>
-<option value="center"<?php if ($setting == 'center') echo ' selected="selected"'; ?>><?php echo __('Center', 'add-watermark') ?></option>
-<option value="right"<?php if ($setting == 'right') echo ' selected="selected"'; ?>><?php echo __('Right', 'add-watermark') ?></option>
+	<option value="left"
+		<?php if ($setting == 'left') echo ' selected="selected"'; ?>><?php echo __('Left', 'add-watermark') ?></option>
+	<option value="center"
+		<?php if ($setting == 'center') echo ' selected="selected"'; ?>><?php echo __('Center', 'add-watermark') ?></option>
+	<option value="right"
+		<?php if ($setting == 'right') echo ' selected="selected"'; ?>><?php echo __('Right', 'add-watermark') ?></option>
 </select>
 <?php echo __('then move', 'add-watermark') ?>
 <?php $this->outputUnitSelect('horizontal-pos'); ?>
@@ -271,9 +385,12 @@ jQuery(function() {
 ?>
 <?php echo __('Align to', 'add-watermark') ?>
 <select name="add-watermark-vertical-pos-from">
-<option value="top"<?php if ($setting == 'top') echo ' selected="selected"'; ?>><?php echo __('Top', 'add-watermark') ?></option>
-<option value="center"<?php if ($setting == 'center') echo ' selected="selected"'; ?>><?php echo __('Center', 'add-watermark') ?></option>
-<option value="bottom"<?php if ($setting == 'bottom') echo ' selected="selected"'; ?>><?php echo __('Bottom', 'add-watermark') ?></option>
+	<option value="top"
+		<?php if ($setting == 'top') echo ' selected="selected"'; ?>><?php echo __('Top', 'add-watermark') ?></option>
+	<option value="center"
+		<?php if ($setting == 'center') echo ' selected="selected"'; ?>><?php echo __('Center', 'add-watermark') ?></option>
+	<option value="bottom"
+		<?php if ($setting == 'bottom') echo ' selected="selected"'; ?>><?php echo __('Bottom', 'add-watermark') ?></option>
 </select>
 <?php echo __('then move', 'add-watermark') ?>
 <?php $this->outputUnitSelect('vertical-pos'); ?>
@@ -309,10 +426,13 @@ jQuery(function() {
 		$setting = add_watermark_option("$name");
 		$unit = add_watermark_option("$name-unit");
 ?>
-<input type="text" name="add-watermark-<?php echo $name ?>" value="<?php echo esc_attr($setting) ?>"/>
+<input type="text" name="add-watermark-<?php echo $name ?>"
+	value="<?php echo esc_attr($setting) ?>" />
 <select name="add-watermark-<?php echo $name ?>-unit">
-<option value="px"<?php if ($unit != '%') echo ' selected="selected"'; ?>><?php echo __('Pixel', 'add-watermark') ?></option>
-<option value="%"<?php if ($unit == '%') echo ' selected="selected"'; ?>><?php echo __('%', 'add-watermark') ?></option>
+	<option value="px"
+		<?php if ($unit != '%') echo ' selected="selected"'; ?>><?php echo __('Pixel', 'add-watermark') ?></option>
+	<option value="%"
+		<?php if ($unit == '%') echo ' selected="selected"'; ?>><?php echo __('%', 'add-watermark') ?></option>
 </select>
 
 <?php
@@ -327,8 +447,8 @@ class AddWatermarkOptionsPage {
 	function generateOptions() {
 ?>
 <div class="wrap add-watermark-settings">
-<h2><?php echo __('Add watermark settings', 'add-watermark') ?></h2>
-<form method="post" action="options.php"> 
+	<h2><?php echo __('Add watermark settings', 'add-watermark') ?></h2>
+	<form method="post" action="options.php"> 
 
 <?php settings_fields( 'add-watermark-settings' ); 
 do_settings_sections( 'add-watermark-settings' );
@@ -422,7 +542,7 @@ class AddWatermarkMarker {
 		$x += $this->getUnitOption("horizontal-pos", imagesx($this->image), 0);
 		$y += $this->getUnitOption("vertical-pos", imagesy($this->image), 0);
 
-		imagecopyresized($this->image, $watermark, (int) $x, (int) $y, 0, 0, (int) $width, (int) $height, imagesx($watermark), imagesy($watermark));
+		imagecopyresampled($this->image, $watermark, (int) $x, (int) $y, 0, 0, (int) $width, (int) $height, imagesx($watermark), imagesy($watermark));
 	}
 
 	/**
@@ -455,10 +575,10 @@ class AddWatermarkMarker {
 		header("Content-Type: {$this->type['type']}");
 		switch ($this->type['type']) {
 		case 'image/jpeg':
-			imagejpeg($this->image, $filename);
+			@imagejpeg($this->image, $filename);
 			break;
 		case 'image/png':
-			imagepng($this->image, $filename);
+			@imagepng($this->image, $filename);
 			break;
 		}
 	}
@@ -471,6 +591,7 @@ class AddWatermarkRequest {
 		if ($m->shouldAddWatermark()) {
 			$m->addWatermarkCached();
 		} else {
+			$m->linkOriginalInCache();
 			$m->outputOriginal();
 		}
 	}
@@ -521,6 +642,25 @@ class AddWatermarkRequest {
 		$attachments = $myquery->get_posts();
 		
 		if (count($attachments) != 1) {
+			print_r($attachments);
+			// Second attempt: scan for a post that has that thumbnail.
+			$myquery = new WP_Query(array(
+					'post_type' => 'attachment',
+					'post_status' => 'any',
+					'meta_query' => array(array(
+						'key' => '_wp_attachment_metadata',
+						'value' => '"' . basename($this->paths['thumbupload']) . '"',
+						'compare' => 'LIKE'
+					),
+					array(
+						'key' => '_wp_attached_file',
+						'value' => preg_quote(dirname($this->paths['thumbupload'])) . '/.*',
+						'compare' => 'REGEXP'
+					))
+				));
+			$attachments = $myquery->get_posts();
+		}
+		if (count($attachments) != 1) {
 			$this->error404();
 		}
 		$this->attachment = $attachments[0];
@@ -570,21 +710,50 @@ class AddWatermarkRequest {
 		readfile($path);
 		exit;
 	}
+	
+	function linkOriginalInCache() {
+		$cacheFile = $this->getCachePath(true);
+		$this->removeFromCache();
+		@touch("$cacheFile.nowm");
+	}
+	
 
 	function error404() {
-		//debug_print_backtrace();
+		debug_print_backtrace();
 		status_header( 404 );
 		nocache_headers();
 		include( get_query_template( '404' ) );
 		die();
 	}
 
-	function getCachePath($create = false) {
-		$dir = self::getCacheDir();
-		if ($create) {
-			@mkdir($dir, 0777, true);
+	function removeFromCache() {
+		self::removeFileFromCache($this->paths['thumbupload']);
+	}
+	
+	/**
+	 * Removes a file from the cache
+	 * @param relativeFile The relative filename inside the uploads dir.
+	 */
+	static function removeFileFromCache($relativeFile) {
+		$cacheFile = self::getCacheDir() . "/" . $relativeFile;
+		@unlink("$cacheFile");
+		@unlink("$cacheFile.nowm");
+	}
+
+	function getCachePath($createDir = false) {
+		$path = self::getCacheDir() . "/" . $this->paths['thumbupload'];
+		if ($createDir) {
+			if (!is_dir(dirname($path))) {
+				@mkdir(dirname($path), 0777, true);
+				if (!is_file(self::getCacheDir() . '/.htaccess')) {
+					// We could also use deny from all
+					// This might cause an internal server error if order is not allowed on that server.
+					// So we use mod_rewrite instead.
+					file_put_contents(self::getCacheDir() . '/.htaccess', "RewriteEngine ON\nRewriteRule .* / [F]");
+				}
+			}
 		}
-		return $dir . "/" . md5($this->paths['thumbupload']);
+		return $path;
 	}
 
 	function addWatermarkCached() {
@@ -592,19 +761,35 @@ class AddWatermarkRequest {
 		if (!is_file($file)) {
 			$wm = $this->addWatermark();
 			$wm->sendFile("$file-temp");
-			rename("$file-temp", $file);
+			$this->removeFromCache();
+			@rename("$file-temp", $file);
 		} else {
+			// Some race condition htaccess did not catch.
 			$this->outputOriginal($file);
 		}
 	}
 
 	static function getCacheDir() {
-		return plugin_dir_path( __FILE__ ) . "/cache";
+		//alternative: trailingslashit( WP_CONTENT_DIR ) . 'watermark-cache';
+		return plugin_dir_path( __FILE__ ) . "cache";
 	}
-
+	
 	static function emptyCache() {
-		$dir = self::getCacheDir();
-		array_map('unlink', glob("$dir/*"));
+		$dir = self::getCacheDir ();
+		self::deleteContents($dir);
+	}
+	
+	
+	static function deleteContents($dir) {
+		$files = array_diff(scandir($dir), array('.', '..'));
+		foreach ($files as $file) {
+			if (is_dir("$dir/$file")) {
+				self::deleteContents("$dir/$file");
+				rmdir("$dir/$file");
+			} else {
+				unlink("$dir/$file");
+			}
+		}
 	}
 }
 
@@ -614,3 +799,6 @@ if ( is_admin() ){
 add_action( 'wp_ajax_watermark_image', array('AddWatermarkRequest', 'runAjax') );
 add_action( 'wp_ajax_nopriv_watermark_image', array('AddWatermarkRequest', 'runAjax') );
 
+register_activation_hook(__FILE__, array('AddWatermarksSettings', 'pluginActivate'));
+register_deactivation_hook(__FILE__, array('AddWatermarksSettings', 'pluginDeactivate'));
+register_uninstall_hook(__FILE__, array('AddWatermarksSettings', 'pluginUninstall'));
