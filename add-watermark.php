@@ -518,6 +518,10 @@ class AddWatermarkMarker {
 
 	function createImage($imagepath) {
 		$type = wp_check_filetype($imagepath);
+		@ini_set( 'memory_limit', apply_filters( 'image_memory_limit', WP_MAX_MEMORY_LIMIT ) );
+		if (add_watermark_option('debug')) {
+			echo "Loading image $imagepath of type {$type['type']} having memory: " . ini_get('memory_limit') . "\n";
+		}
 		switch ($type['type']) {
 		case 'image/jpeg':
 			return @imagecreatefromjpeg($imagepath);
@@ -531,6 +535,9 @@ class AddWatermarkMarker {
 	}
 
 	function addWatermark() {
+			if (add_watermark_option('debug')) {
+				echo "xxx\n";
+			}
 		$watermarkId = add_watermark_option("image");
 		if (!$watermarkId) {
 			throw new RuntimeException("No watermark selected.");
@@ -585,6 +592,9 @@ class AddWatermarkMarker {
 		$x += $this->getUnitOption("horizontal-pos", imagesx($this->image), 0);
 		$y += $this->getUnitOption("vertical-pos", imagesy($this->image), 0);
 
+		if (add_watermark_option('debug')) {
+			echo "Adding watermark at ($x, $y) with size ($width, $height).\n";
+		}
 		imagecopyresampled($this->image, $watermark, (int) $x, (int) $y, 0, 0, (int) $width, (int) $height, imagesx($watermark), imagesy($watermark));
 	}
 
@@ -632,8 +642,14 @@ class AddWatermarkRequest {
 		$m = new AddWatermarkRequest();
 		$m->searchAttachments();
 		if ($m->shouldAddWatermark()) {
+			if (add_watermark_option('debug')) {
+				echo "Should add watermark: yes.\n";
+			}
 			$m->addWatermarkCached();
 		} else {
+			if (add_watermark_option('debug')) {
+				echo "Should add watermark: no.\n";
+			}
 			$m->linkOriginalInCache();
 			$m->outputOriginal();
 		}
@@ -658,6 +674,9 @@ class AddWatermarkRequest {
 		$paths['thumbabs'] = realpath($upload_dir['basedir'] . "/" . $paths['thumbupload']);
 
 		if (!$paths['thumbabs']) {
+			if (add_watermark_option('debug')) {
+				echo "No such file: " . $upload_dir['basedir'] . "/" . $paths['thumbupload'];
+			}
 			$this->error404();
 		}
 
@@ -712,6 +731,10 @@ class AddWatermarkRequest {
 			$this->error404();
 		}
 		$this->attachment = $attachments[0];
+		if (add_watermark_option('debug')) {
+			echo "Found this attachment:\n";
+			print_r($this->attachment);
+		}
 
 		// handle the size
 		if ($this->paths['attachmentfile'] != $this->paths['thumbfile']) {
@@ -720,7 +743,6 @@ class AddWatermarkRequest {
 				echo "This is no full size image. Scanning meta sizes:\n";
 				print_r($meta);
 			}
-			echo "Paths found for the image:\n";
 			foreach ($meta['sizes'] as $name => $size) {
 				if ($size['file'] == $this->paths['thumbfile']) {
 					$this->size = $name;
@@ -750,6 +772,9 @@ class AddWatermarkRequest {
 			$wm->sendFile();
 			return $wm;
 		} catch (Exception $e) {
+			if (add_watermark_option('debug')) {
+				echo "There was a problem generating the watermark: $e";
+			}
 			$this->error404();
 		}
 	}
@@ -759,7 +784,7 @@ class AddWatermarkRequest {
 			$path = $this->paths['thumbabs'];
 		}
 		$type = wp_check_filetype($this->paths['thumbabs']);
-		att_watermark_header($type['type']);
+		add_watermark_header($type['type']);
 		readfile($path);
 		exit;
 	}
@@ -815,11 +840,20 @@ class AddWatermarkRequest {
 	function addWatermarkCached() {
 		$file = $this->getCachePath(true);
 		if (!is_file($file)) {
+			if (add_watermark_option('debug')) {
+				echo "Generating watermark\n";
+			}
 			$wm = $this->addWatermark();
+			if (add_watermark_option('debug')) {
+				echo "Updating cache\n";
+			}
 			$wm->sendFile("$file-temp");
 			$this->removeFromCache();
 			@rename("$file-temp", $file);
 		} else {
+			if (add_watermark_option('debug')) {
+				echo "There is a cached version of this file. Send it.\n";
+			}
 			// Some race condition htaccess did not catch.
 			$this->outputOriginal($file);
 		}
