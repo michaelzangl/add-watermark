@@ -33,6 +33,12 @@ function add_watermark_defaults() {
 		'height-max-unit' => '%',
 		'height-min' => '10',
 		'height-min-unit' => '%',
+		'exclude' => '^wpcf7.*',
+		// Servers supporting this would make the plugin more secure/portable.
+		'supports_document_root' => false,
+		'supports_end' => false,
+		// Do not use in production.
+		'debug' => false
 	);
 	
 	return $defaults;
@@ -46,6 +52,14 @@ function add_watermark_option($name) {
 	}
 
 	return get_option("add-watermark-$name", $defaults[$name]);
+}
+
+function add_watermark_header($type) {
+	if (add_watermark_option('debug')) {
+		echo "Would now add header for $type\n";
+	} else {
+		header("Content-Type: $type");
+	}
 }
 
 class AddWatermarksSettings {
@@ -104,7 +118,7 @@ class AddWatermarksSettings {
 	}
 
 	function addWatermarkColumn($columns) {
-		$columns['add-watermark'] = "Wasserzeichen";
+		$columns['add-watermark'] = __("Watermark", 'add-watermark');
 		return $columns;
 	}
 
@@ -234,19 +248,39 @@ jQuery(function() {
 			return;
 		$cache_root = trailingslashit($cache_root['path']);
 
+		$exclude = add_watermark_option('exclude');
+		$exclude = preg_replace('/[\\s\\n]/', '\\s', $exclude);
+		if (add_watermark_option('supports_document_root')) {
+			// nice server.
+			$docRoot = '%{DOCUMENT_ROOT}';
+		} else {
+			// We hope this is the same as our document root.
+			// For bad hosters (like 1und1)
+			$docRoot = $_SERVER['DOCUMENT_ROOT'];		
+		}
+		$cacheDir = $docRoot . $cache_root;
 		//$cacheDir = AddWatermarkRequest::getCacheDir();
-		$cacheDir = '%{DOCUMENT_ROOT}' . $cache_root;
+		
 		$content .= "\n### WATERMARK START";
+
+		$content .= "\nRewriteEngine On";
+		$content .= "\nRewriteBase $upload_root";
 		
 		// Use cached files if they are there
-		$content .= "\n" . 'RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f';
+		$content .= "\n" . 'RewriteCond ' . $docRoot . '%{REQUEST_URI} -f';
 		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
 		$content .= "\n" . 'RewriteCond ' . $cacheDir . '/%1 -f';
-		$content .= "\n" . 'RewriteRule (.*) ' . $cacheDir . '/%1 [L,END]';
+		$end = add_watermark_option('supports_end') ? ',END' : '';
+		$content .= "\n" . 'RewriteRule (.*) ' . $cache_root . '/$1 [L' . $end . ']';
 		
 		// If there is no don't watermark flag and it is an image, handle it.
 		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
 		$content .= "\n" . 'RewriteCond ' . $cacheDir . '/%1.nowm !-f';
+
+		// User can set a regexp that should not get watermarked.
+		if ($exclude) {
+			$content .= "\n" . 'RewriteCond $0 !'.$exclude;
+		}
 
 		// Note: The uploads direcotry should not be moved outside wp-content, the admin directory not moved.
 		$content .= "\n" . 'RewriteRule (.*) ../../wp-admin/admin-ajax.php?action=watermark_image&path=$1 [L]';
@@ -275,6 +309,7 @@ jQuery(function() {
 
 	function loadPositionSettings() {
 		register_setting( 'add-watermark-settings', 'add-watermark-default-active' );
+		register_setting( 'add-watermark-settings', 'add-watermark-exclude' );
 		register_setting( 'add-watermark-settings', 'add-watermark-image' );
 		register_setting( 'add-watermark-settings', 'add-watermark-size' );
 		$this->registerUnitSelect('add-watermark-horizontal-pos');
@@ -284,8 +319,9 @@ jQuery(function() {
 		$this->registerMinMaxSize('add-watermark-width');
 		$this->registerMinMaxSize('add-watermark-height');
 
-		add_settings_section( 'add-watermark-default-active', __('General settings', 'add-watermark'), null, 'add-watermark-settings');
-		add_settings_field( 'add-watermark-default-active', __('Watermark images that do not have an explicit setting', 'add-watermark'), array($this, 'outputDefaultSelect'), 'add-watermark-settings', 'add-watermark-default-active');
+		add_settings_section( 'add-watermark-general', __('General settings', 'add-watermark'), null, 'add-watermark-settings');
+		add_settings_field( 'add-watermark-default-active', __('Watermark images that do not have an explicit setting', 'add-watermark'), array($this, 'outputDefaultSelect'), 'add-watermark-settings', 'add-watermark-general');
+		add_settings_field( 'add-watermark-exclude', __('Files to exclude (regexp, relative to uploads dir)', 'add-watermark'), array($this, 'outputExclude'), 'add-watermark-settings', 'add-watermark-general');
 		add_settings_section( 'add-watermark-image', __('Watermark image', 'add-watermark'), null, 'add-watermark-settings');
 		add_settings_field( 'add-watermark-image', __('Image', 'add-watermark'), array($this, 'outputImageSelect'), 'add-watermark-settings', 'add-watermark-image');
 		add_settings_section( 'add-watermark-position', __('Watermark position', 'add-watermark'), array($this, 'addPositionDescription'), 'add-watermark-settings');
@@ -307,6 +343,13 @@ jQuery(function() {
 		</div>
 	</div>
 </div>
+<?php
+	}
+
+	function outputExclude() {
+		$setting = add_watermark_option("exclude");
+?>
+<input type="text" name="add-watermark-exclude" value="<?php echo esc_attr($setting); ?>" />
 <?php
 	}
 
@@ -572,7 +615,7 @@ class AddWatermarkMarker {
 	}
 
 	function sendFile($filename = null) {
-		header("Content-Type: {$this->type['type']}");
+		add_watermark_header($this->type['type']);
 		switch ($this->type['type']) {
 		case 'image/jpeg':
 			@imagejpeg($this->image, $filename);
@@ -632,6 +675,11 @@ class AddWatermarkRequest {
 
 	function searchAttachments() {
 		$this->paths = $this->getPaths();
+
+		if (add_watermark_option('debug')) {
+			echo "Paths found for the image:\n";
+			print_r($this->paths);
+		}
 		
 		$myquery = new WP_Query(array(
 			'post_type' => 'attachment',
@@ -642,7 +690,7 @@ class AddWatermarkRequest {
 		$attachments = $myquery->get_posts();
 		
 		if (count($attachments) != 1) {
-			print_r($attachments);
+			//print_r($attachments);
 			// Second attempt: scan for a post that has that thumbnail.
 			$myquery = new WP_Query(array(
 					'post_type' => 'attachment',
@@ -668,6 +716,11 @@ class AddWatermarkRequest {
 		// handle the size
 		if ($this->paths['attachmentfile'] != $this->paths['thumbfile']) {
 			$meta = wp_get_attachment_metadata($this->attachment->ID);
+			if (add_watermark_option('debug')) {
+				echo "This is no full size image. Scanning meta sizes:\n";
+				print_r($meta);
+			}
+			echo "Paths found for the image:\n";
 			foreach ($meta['sizes'] as $name => $size) {
 				if ($size['file'] == $this->paths['thumbfile']) {
 					$this->size = $name;
@@ -706,7 +759,7 @@ class AddWatermarkRequest {
 			$path = $this->paths['thumbabs'];
 		}
 		$type = wp_check_filetype($this->paths['thumbabs']);
-		header("Content-Type: {$type['type']}");
+		att_watermark_header($type['type']);
 		readfile($path);
 		exit;
 	}
@@ -719,7 +772,9 @@ class AddWatermarkRequest {
 	
 
 	function error404() {
-		debug_print_backtrace();
+		if (add_watermark_option('debug')) {
+			debug_print_backtrace();
+		}
 		status_header( 404 );
 		nocache_headers();
 		include( get_query_template( '404' ) );
@@ -745,7 +800,8 @@ class AddWatermarkRequest {
 		if ($createDir) {
 			if (!is_dir(dirname($path))) {
 				@mkdir(dirname($path), 0777, true);
-				if (!is_file(self::getCacheDir() . '/.htaccess')) {
+				// Servers not supporting END cannot support chache dir protection.
+				if (!is_file(self::getCacheDir() . '/.htaccess') && add_watermark_option('supports_end')) {
 					// We could also use deny from all
 					// This might cause an internal server error if order is not allowed on that server.
 					// So we use mod_rewrite instead.
