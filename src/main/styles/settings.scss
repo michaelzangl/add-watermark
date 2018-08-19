@@ -1,0 +1,25 @@
+
+.add-watermark-preview {
+    background: white;
+    width: 400px;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+    resize: both;
+    .watermark {
+        position: absolute;
+        background: url('watermark.png');
+        background-repeat: no-repeat;
+        background-position: center center;
+        width: 100%;
+        height: 100%;
+    }
+    .watermark-pos {
+        position: absolute;
+    }
+    .watermark-pos2 {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+    }
+}

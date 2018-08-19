@@ -1,0 +1,64 @@
+// Main build script
+// Use ./gradlew tasks for help
+
+buildscript {
+    repositories {
+        maven {
+            url uri('https://mvn.anigu.de')
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'de.anigu.wp.plugin', name: 'gradle-plugin-for-wordpress',
+                  version: '1.0-SNAPSHOT'
+    }
+}
+apply plugin: 'de.anigu.wp.plugin'
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+wp {
+	name = "add-watermark"
+    humanName = 'Add Watermarks'
+    description = 'Adds watermarks to selected images without changing the original image.'
+	version = '2.0.0'
+    contributors = 'michael.zangl'
+    tags = 'watermark, media, htaccess'
+    license = 'GPLv2 or later'
+    licenseUri = 'http://www.gnu.org/licenses/gpl-2.0.html'
+
+	entry name: 'add-watermark.php'
+	entry name: 'settings.js', type: 'script', scope: 'admin'
+	entry name: 'settings.scss', type: 'style', scope: 'admin'
+
+    required {
+        min = '4.0.0'
+        tested = '4.9.8'
+    }
+
+	dependencies {
+	}
+
+	devServer {
+		port = 8095
+        type = "apache2"
+        apacheConfig = "LogLevel alert rewrite:trace5"
+		db {
+			prefix = 'wp_addwatermark_'
+		}
+		plugin {
+		    it.name = 'query-monitor'
+		    it.version = '3.1.0'
+		}
+	}
+
+	dist {
+        // Short form of readme 'Description' 'readme/Description.md'
+        readme 'Description'
+        readme 'Installation'
+        readme 'Frequently Asked Questions', 'readme/FAQ.md'
+
+        screenshot 'readme/screenshot-1.png'
+	}
+}

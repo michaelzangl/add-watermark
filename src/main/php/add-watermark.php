@@ -264,27 +264,29 @@ jQuery(function() {
 		$content .= "\n### WATERMARK START";
 
 		$content .= "\nRewriteEngine On";
-		$content .= "\nRewriteBase $upload_root";
+		$content .= "\n" . 'RewriteBase "' . $upload_root . '"';
 		
 		// Use cached files if they are there
-		$content .= "\n" . 'RewriteCond ' . $docRoot . '%{REQUEST_URI} -f';
+		$content .= "\n" . 'RewriteCond "' . $docRoot . '%{REQUEST_URI}" -f';
 		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
-		$content .= "\n" . 'RewriteCond ' . $cacheDir . '/%1 -f';
+		$content .= "\n" . 'RewriteCond "' . $cacheDir . '%1" -f';
 		$end = add_watermark_option('supports_end') ? ',END' : '';
-		$content .= "\n" . 'RewriteRule (.*) ' . $cache_root . '/$1 [L' . $end . ']';
+		$content .= "\n" . 'RewriteRule (.*) "' . $cache_root . '$1" [L' . $end . ']';
 		
 		// If there is no don't watermark flag and it is an image, handle it.
 		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
-		$content .= "\n" . 'RewriteCond ' . $cacheDir . '/%1.nowm !-f';
+		$content .= "\n" . 'RewriteCond "' . $cacheDir . '%1.nowm" !-f';
 
 		// User can set a regexp that should not get watermarked.
 		if ($exclude) {
-			$content .= "\n" . 'RewriteCond $0 !'.$exclude;
+			$content .= "\n" . 'RewriteCond $0 "!' . $exclude . '"';
 		}
 
-		// Note: The uploads direcotry should not be moved outside wp-content, the admin directory not moved.
-		$content .= "\n" . 'RewriteRule (.*) ../../wp-admin/admin-ajax.php?action=watermark_image&path=$1 [L]';
+		// Note: We hardcode the admin directory. User can update this: the .htaccess is regenerated after a cache refresh.
+		$content .= "\n" . "RewriteBase /";
+		$content .= "\n" . 'RewriteRule "' . $upload_root . '(.*)" "' . get_admin_url('admin-ajax.php') . '?action=watermark_image&path=$1" [L]';
 		$content .= "\n### WATERMARK END";
+		$content .= "\n";
 		file_put_contents($file, $content);
 	}
 	
@@ -335,8 +337,7 @@ jQuery(function() {
 
 	function addPositionDescription() {
 ?>
-<div class="add-watermark-preview"
-	style="background: white; width: 400px; height: 300px; position: relative; overflow: hidden; resize: both">
+<div class="add-watermark-preview">
 	<div class="watermark-pos">
 		<div class="watermark-pos2">
 			<div class="watermark" style=""></div>
@@ -381,17 +382,18 @@ jQuery(function() {
 }
 
 	function outputImageSelect() {
-		$setting = add_watermark_option("image", "") * 1;
+		$setting = add_watermark_option("image", "");
+		$image = preg_match("/^\\d+$/", $setting) ? wp_get_attachment_url($setting * 1) : '';
 ?>
 <div class="add-watermark-image">
 	<input class="add-watermark-image-id" type="hidden"
 		name="add-watermark-image" value="<?php echo esc_attr($setting) ?>" />
 	<input class="add-watermark-image-url" type="hidden"
 		name="add-watermark-image-url"
-		value="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>" /> <img
+		value="<?php echo esc_attr($image) ?>" /> <img
 		class="add-watermark-image-preview"
 		style="width: auto; height: auto; max-width: 300px; max-height: 200px;"
-		src="<?php echo esc_attr(wp_get_attachment_url($setting)) ?>" />
+		src="<?php echo esc_attr($image) ?>" />
 	<div class="add-watermark-image-path"></div>
 	<div>
 		<a class="add-watermark-image-select" href="#"><?php echo __('Choose image', 'add-watermark') ?></a>
@@ -869,15 +871,16 @@ class AddWatermarkRequest {
 		self::deleteContents($dir);
 	}
 	
-	
 	static function deleteContents($dir) {
-		$files = array_diff(scandir($dir), array('.', '..'));
-		foreach ($files as $file) {
-			if (is_dir("$dir/$file")) {
-				self::deleteContents("$dir/$file");
-				rmdir("$dir/$file");
-			} else {
-				unlink("$dir/$file");
+		if (is_dir($dir)) {
+			$files = array_diff(scandir($dir), ['.', '..']);
+			foreach ($files as $file) {
+				if (is_dir("$dir/$file")) {
+					self::deleteContents("$dir/$file");
+					rmdir("$dir/$file");
+				} else {
+					unlink("$dir/$file");
+				}
 			}
 		}
 	}
@@ -886,9 +889,9 @@ class AddWatermarkRequest {
 if ( is_admin() ){
 	AddWatermarksSettings::register();
 }
-add_action( 'wp_ajax_watermark_image', array('AddWatermarkRequest', 'runAjax') );
-add_action( 'wp_ajax_nopriv_watermark_image', array('AddWatermarkRequest', 'runAjax') );
+add_action( 'wp_ajax_watermark_image', ['AddWatermarkRequest', 'runAjax'] );
+add_action( 'wp_ajax_nopriv_watermark_image', ['AddWatermarkRequest', 'runAjax'] );
 
-register_activation_hook(__FILE__, array('AddWatermarksSettings', 'pluginActivate'));
-register_deactivation_hook(__FILE__, array('AddWatermarksSettings', 'pluginDeactivate'));
-register_uninstall_hook(__FILE__, array('AddWatermarksSettings', 'pluginUninstall'));
+register_activation_hook(__FILE__, ['AddWatermarksSettings', 'pluginActivate']);
+register_deactivation_hook(__FILE__, ['AddWatermarksSettings', 'pluginDeactivate']);
+register_uninstall_hook(__FILE__, ['AddWatermarksSettings', 'pluginUninstall']);
