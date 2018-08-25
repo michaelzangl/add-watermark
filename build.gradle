@@ -10,7 +10,7 @@ buildscript {
     }
     dependencies {
         classpath group: 'de.anigu.wp.plugin', name: 'gradle-plugin-for-wordpress',
-                  version: '1.0-SNAPSHOT'
+                  version: '1.0.0'
     }
 }
 apply plugin: 'de.anigu.wp.plugin'
@@ -24,6 +24,7 @@ wp {
     description = 'Adds watermarks to selected images without changing the original image.'
 	version = '2.0.0'
     contributors = 'michael.zangl'
+    author = 'Michael Zangl'
     tags = 'watermark, media, htaccess'
     license = 'GPLv2 or later'
     licenseUri = 'http://www.gnu.org/licenses/gpl-2.0.html'
@@ -59,6 +60,8 @@ wp {
         readme 'Installation'
         readme 'Frequently Asked Questions', 'readme/FAQ.md'
 
-        screenshot 'readme/screenshot-1.png'
+        screenshot 'readme/screenshot-1.png', 'You can select an image to use as watermark and to which images watermarks should be applied.'
+        screenshot 'readme/screenshot-2.png', 'The settings to adjust the position of the watermark. Those are lots of numbers, but there is a (resizeable) live preview area ;-). If you are familiar with CSS, you should have no problem with this.'
+        screenshot 'readme/screenshot-3.png', 'You can add or remove watermarks from individual images in the media library.'
 	}
 }
