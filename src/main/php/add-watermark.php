@@ -10,6 +10,9 @@
 	Domain Path: /lang
  */
 
+// Added inside the uploads directory
+define('ADD_WATERMARK_CACHE_DIR', 'watermark-cache');
+
 function add_watermark_defaults() {
 	static $defaults = array(
 		'default-active' => '0',
@@ -176,14 +179,14 @@ class AddWatermarksSettings {
 	function outputAdminFooter() {
 ?>
 <script type="text/javascript">
-jQuery(function() {
+window.addEventListener('load', function() {
 	jQuery('<option value="add_watermark_yes">').text("<?php echo html_entity_decode(__('Insert watermark', 'add-watermark')) ?>").appendTo("select[name=\'action\']");
 	jQuery('<option value="add_watermark_yes">').text("<?php echo html_entity_decode(__('Insert watermark', 'add-watermark')) ?>").appendTo("select[name=\'action2\']");
 	jQuery('<option value="add_watermark_no">').text("<?php echo html_entity_decode(__('Remove watermark', 'add-watermark')) ?>").appendTo("select[name=\'action\']");
 	jQuery('<option value="add_watermark_no">').text("<?php echo html_entity_decode(__('Remove watermark', 'add-watermark')) ?>").appendTo("select[name=\'action2\']");
 	jQuery('<option value="add_watermark_unset">').text("<?php echo html_entity_decode(__('Set watermark to default', 'add-watermark')) ?>").appendTo("select[name=\'action\']");
 	jQuery('<option value="add_watermark_unset">').text("<?php echo html_entity_decode(__('Set watermark to default', 'add-watermark')) ?>").appendTo("select[name=\'action2\']");
-});
+}, true);
 </script>
 <?php
 	}
@@ -232,21 +235,18 @@ jQuery(function() {
 	 */
 	function writeHtaccessFile() {
 		$file = $this->getUploadPath('.htaccess');
-		$content = file_get_contents($file);
+		$content = is_file($file) ? file_get_contents($file) : '';
 		$content = preg_replace('=^\\n?### WATERMARK START([\w\W]*)### WATERMARK END=m', '', $content);
 
 		$upload_dir = wp_upload_dir();
 		$upload_root = parse_url($upload_dir['baseurl']);
-		if ( isset( $upload_root['path'] ) )
+		if ( isset( $upload_root['path'] ) ) {
 			$upload_root = trailingslashit($upload_root['path']);
-		else
+		} else {
 			$upload_root = '/';
+		}
 
-		$cache_root = parse_url( plugins_url('cache', __FILE__) );
-		if ( !isset( $cache_root['path'] ) )
-			//TODO: Display error.
-			return;
-		$cache_root = trailingslashit($cache_root['path']);
+		$cache_root = $upload_root . ADD_WATERMARK_CACHE_DIR . '/';
 
 		$exclude = add_watermark_option('exclude');
 		$exclude = preg_replace('/[\\s\\n]/', '\\s', $exclude);
@@ -256,18 +256,20 @@ jQuery(function() {
 		} else {
 			// We hope this is the same as our document root.
 			// For bad hosters (like 1und1)
-			$docRoot = $_SERVER['DOCUMENT_ROOT'];		
+			$docRoot = $_SERVER['DOCUMENT_ROOT'];
 		}
-		$cacheDir = $docRoot . $cache_root;
-		//$cacheDir = AddWatermarkRequest::getCacheDir();
+		// $cacheDir = $docRoot . $cache_root;
+		$cacheDir = trailingslashit(AddWatermarkRequest::getCacheDir());
 		
 		$content .= "\n### WATERMARK START";
+		$content .= "\n# Document root: $docRoot";
+		$content .= "\n# Cache dir: $cacheDir";
 
 		$content .= "\nRewriteEngine On";
 		$content .= "\n" . 'RewriteBase "' . $upload_root . '"';
 		
 		// Use cached files if they are there
-		$content .= "\n" . 'RewriteCond "' . $docRoot . '%{REQUEST_URI}" -f';
+		$content .= "\n" . 'RewriteCond "%{REQUEST_FILENAME}" -f';
 		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
 		$content .= "\n" . 'RewriteCond "' . $cacheDir . '%1" -f';
 		$end = add_watermark_option('supports_end') ? ',END' : '';
@@ -276,6 +278,8 @@ jQuery(function() {
 		// If there is no don't watermark flag and it is an image, handle it.
 		$content .= "\n" . 'RewriteCond $0 ^/?(.*\\.(jpe?g|png))$';
 		$content .= "\n" . 'RewriteCond "' . $cacheDir . '%1.nowm" !-f';
+		// Avoid recursing ito the cache directory
+		$content .= "\n" . 'RewriteCond $0 "!^' . preg_quote(ADD_WATERMARK_CACHE_DIR) . '"';
 
 		// User can set a regexp that should not get watermarked.
 		if ($exclude) {
@@ -283,8 +287,7 @@ jQuery(function() {
 		}
 
 		// Note: We hardcode the admin directory. User can update this: the .htaccess is regenerated after a cache refresh.
-		$content .= "\n" . "RewriteBase /";
-		$content .= "\n" . 'RewriteRule "' . $upload_root . '(.*)" "' . get_admin_url('admin-ajax.php') . '?action=watermark_image&path=$1" [L]';
+		$content .= "\n" . 'RewriteRule "(.*)" "' . get_admin_url() . 'admin-ajax.php?action=watermark_image&path=$1" [L]';
 		$content .= "\n### WATERMARK END";
 		$content .= "\n";
 		file_put_contents($file, $content);
@@ -494,6 +497,9 @@ class AddWatermarkOptionsPage {
 <div class="wrap add-watermark-settings">
 	<h2><?php echo __('Add watermark settings', 'add-watermark') ?></h2>
 	<form method="post" action="options.php"> 
+<?php if(!function_exists('imagecreatefromjpeg')) { ?>
+	<p style="color:red"><?php echo __('GD not found. Install the phpX-gd package (debian/ubuntu) or ask your hoster to enable that module.', 'add-watermark') ?></php>
+<?php } /* imagecreatefromjpeg */ ?>
 
 <?php settings_fields( 'add-watermark-settings' ); 
 do_settings_sections( 'add-watermark-settings' );
@@ -862,8 +868,8 @@ class AddWatermarkRequest {
 	}
 
 	static function getCacheDir() {
-		//alternative: trailingslashit( WP_CONTENT_DIR ) . 'watermark-cache';
-		return plugin_dir_path( __FILE__ ) . "cache";
+		//alternative: plugin_dir_path( __FILE__ ) . "cache"
+		return trailingslashit(wp_upload_dir()['basedir']) . ADD_WATERMARK_CACHE_DIR;
 	}
 	
 	static function emptyCache() {
