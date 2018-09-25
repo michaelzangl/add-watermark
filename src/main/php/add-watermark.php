@@ -898,6 +898,7 @@ if ( is_admin() ){
 add_action( 'wp_ajax_watermark_image', ['AddWatermarkRequest', 'runAjax'] );
 add_action( 'wp_ajax_nopriv_watermark_image', ['AddWatermarkRequest', 'runAjax'] );
 
-register_activation_hook(__FILE__, ['AddWatermarksSettings', 'pluginActivate']);
-register_deactivation_hook(__FILE__, ['AddWatermarksSettings', 'pluginDeactivate']);
-register_uninstall_hook(__FILE__, ['AddWatermarksSettings', 'pluginUninstall']);
+$pluginFile = WP_PLUGIN_DIR . '/add-watermark/add-watermark.php';
+register_activation_hook($pluginFile, ['AddWatermarksSettings', 'pluginActivate']);
+register_deactivation_hook($pluginFile, ['AddWatermarksSettings', 'pluginDeactivate']);
+register_uninstall_hook($pluginFile, ['AddWatermarksSettings', 'pluginUninstall']);
