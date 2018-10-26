@@ -22,7 +22,7 @@ wp {
 	name = "add-watermark"
     humanName = 'Add Watermarks'
     description = 'Adds watermarks to selected images without changing the original image.'
-	version = '2.0.2'
+	version = '2.0.3'
     contributors = 'michael.zangl'
     author = 'Michael Zangl'
     tags = 'watermark, media, htaccess'
