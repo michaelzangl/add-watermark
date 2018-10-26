@@ -1,4 +1,8 @@
 jQuery(function () {
+	let $settings = jQuery('.add-watermark-settings');
+	if (!$settings.length) {
+		return;
+	}
 
 	let selectFrame;
 
@@ -75,6 +79,6 @@ jQuery(function () {
 		jQuery('.add-watermark-preview .watermark-pos').css(css_pos);
 		jQuery('.add-watermark-preview .watermark-pos2').css(css_pos2);
 	}
-	jQuery('.add-watermark-settings').find('input, select').on('change input', reloadPreview)
+	$settings.find('input, select').on('change input', reloadPreview)
 	reloadPreview();
 });
